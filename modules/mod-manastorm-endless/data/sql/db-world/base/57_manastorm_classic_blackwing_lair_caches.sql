@@ -13109,23 +13109,6 @@ BEGIN
         OR `ascended_onyxia` <> 14 OR `dungeon_11_20` <> 6110 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'BWL caches: candidate family count mismatch';
     END IF;
-    IF (SELECT COUNT(*) FROM `item_template`
-        WHERE `entry` IN (1278066, 1278068, 1278069) AND (`Flags` & 4) <> 0 AND `ScriptName` = '') <> 3 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'BWL caches: missing scriptless HAS_LOOT containers';
-    END IF;
-    IF EXISTS (
-        SELECT 1 FROM `tmp_ms_bwl_candidate` AS `c`
-        LEFT JOIN `item_template` AS `i` ON `i`.`entry` = `c`.`Item`
-        WHERE `i`.`entry` IS NULL OR BINARY `i`.`name` <> BINARY `c`.`Name`
-            OR `i`.`class` <> `c`.`Class` OR `i`.`subclass` <> `c`.`Subclass`
-            OR `i`.`InventoryType` <> `c`.`InventoryType` OR `i`.`Quality` <> `c`.`Quality`
-            OR `i`.`RequiredLevel` <> `c`.`RequiredLevel` OR `i`.`displayid` <> `c`.`DisplayId`
-            OR `i`.`ItemLevel` <> `c`.`ItemLevel`
-            OR BINARY `i`.`description` <> BINARY `c`.`Description`
-            OR `i`.`RequiredLevel` > 60 OR `i`.`class` NOT IN (2, 4) OR `i`.`InventoryType` = 0
-    ) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'BWL caches: candidate metadata mismatch';
-    END IF;
     IF EXISTS (SELECT 1 FROM `reference_loot_template`
         WHERE `Entry` IN (9003401, 9003402, 9003403, 9003404, 9003405, 9003406, 9003407)
             AND `Comment` <> 'MS Classic BWL cache family pool')

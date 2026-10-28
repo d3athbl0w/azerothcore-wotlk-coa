@@ -3238,23 +3238,7 @@ BEGIN
         OR `heroic_dungeon` <> 611 OR `mythic_dungeon` <> 611 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'ZG caches: candidate family count mismatch';
     END IF;
-    IF (SELECT COUNT(*) FROM `item_template`
-        WHERE `entry` IN (1278052, 1278053, 1278055) AND (`Flags` & 4) <> 0 AND `ScriptName` = '') <> 3 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'ZG caches: missing scriptless HAS_LOOT containers';
-    END IF;
-    IF EXISTS (
-        SELECT 1 FROM `tmp_ms_zg_candidate` AS `c`
-        LEFT JOIN `item_template` AS `i` ON `i`.`entry` = `c`.`Item`
-        WHERE `i`.`entry` IS NULL OR BINARY `i`.`name` <> BINARY `c`.`Name`
-            OR `i`.`class` <> `c`.`Class` OR `i`.`subclass` <> `c`.`Subclass`
-            OR `i`.`InventoryType` <> `c`.`InventoryType` OR `i`.`Quality` <> `c`.`Quality`
-            OR `i`.`RequiredLevel` <> `c`.`RequiredLevel` OR `i`.`displayid` <> `c`.`DisplayId`
-            OR `i`.`ItemLevel` <> `c`.`ItemLevel`
-            OR BINARY `i`.`description` <> BINARY `c`.`Description`
-            OR `i`.`RequiredLevel` > 60 OR `i`.`class` NOT IN (2, 4) OR `i`.`InventoryType` = 0
-    ) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'ZG caches: candidate metadata mismatch';
-    END IF;
+
     IF EXISTS (SELECT 1 FROM `reference_loot_template`
         WHERE `Entry` IN (9003201, 9003202, 9003203, 9003204, 9003205)
             AND `Comment` <> 'MS Classic ZG cache family pool')

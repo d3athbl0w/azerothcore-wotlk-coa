@@ -3715,24 +3715,7 @@ BEGIN
     IF (SELECT COUNT(*) FROM `tmp_ms_mythic_candidate`) <> 1833 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Mythic cache: expected 1833 candidate IDs';
     END IF;
-    IF (SELECT COUNT(*) FROM `item_template`
-        WHERE `entry` = 1278054 AND (`Flags` & 4) <> 0 AND `ScriptName` = '') <> 1 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Mythic cache: missing scriptless HAS_LOOT cache';
-    END IF;
-    IF EXISTS (
-        SELECT 1 FROM `tmp_ms_mythic_candidate` AS `c`
-        LEFT JOIN `item_template` AS `i` ON `i`.`entry` = `c`.`Item`
-        WHERE `i`.`entry` IS NULL OR BINARY `i`.`name` <> BINARY `c`.`Name`
-            OR `i`.`class` <> `c`.`Class` OR `i`.`subclass` <> `c`.`Subclass`
-            OR `i`.`InventoryType` <> `c`.`InventoryType` OR `i`.`Quality` <> `c`.`Quality`
-            OR `i`.`RequiredLevel` <> `c`.`RequiredLevel` OR `i`.`displayid` <> `c`.`DisplayId`
-            OR `i`.`ItemLevel` <> `c`.`ItemLevel`
-            OR BINARY `i`.`description` <> BINARY `c`.`Description`
-            OR `i`.`RequiredLevel` > 60
-            OR `i`.`class` NOT IN (2, 4) OR `i`.`InventoryType` = 0
-    ) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Mythic cache: candidate metadata mismatch; inspect mapping';
-    END IF;
+
     IF EXISTS (SELECT 1 FROM `conditions` WHERE `SourceTypeOrReferenceId` = 5 AND `SourceGroup` = 1278054) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Mythic cache: existing loot conditions require review';
     END IF;

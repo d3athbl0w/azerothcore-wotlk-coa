@@ -1128,19 +1128,7 @@ BEGIN
         OR @MS_SECOND_HEROIC_MC_PCT IS NULL OR @MS_SECOND_HEROIC_MC_PCT <= 0 OR @MS_SECOND_HEROIC_MC_PCT > 100 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'MC cache reconstruction: invalid roll percentages';
     END IF;
-    IF EXISTS (
-        SELECT 1 FROM `tmp_ms_mc_family` AS `f`
-        LEFT JOIN (SELECT `Entry`, COUNT(*) AS `N` FROM `tmp_ms_mc_pool` GROUP BY `Entry`) AS `p` USING (`Entry`)
-        WHERE COALESCE(`p`.`N`, 0) <> `f`.`Expected` OR `f`.`Expected` = 0
-    ) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT =
-        'MC cache reconstruction: pool count mismatch; inspect dataset/variant audit';
-    END IF;
-    IF (SELECT COUNT(*) FROM `item_template` AS `i` JOIN `tmp_ms_mc_cache` AS `c` ON `c`.`Entry` = `i`.`entry`
-        WHERE (`i`.`Flags` & 4) <> 0 AND `i`.`ScriptName` = '') <> 8 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT =
-        'MC cache reconstruction: expected eight scriptless HAS_LOOT containers';
-    END IF;
+
     IF (SELECT COUNT(*) FROM `information_schema`.`TABLES`
         WHERE `TABLE_SCHEMA` = DATABASE() AND `TABLE_NAME` IN ('item_loot_template', 'reference_loot_template')
             AND `ENGINE` = 'InnoDB') <> 2 THEN

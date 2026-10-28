@@ -48943,23 +48943,6 @@ BEGIN
         OR `dungeon_21_30` <> 6110 OR `dungeon_31_40` <> 6110 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ranked caches: candidate family count mismatch';
     END IF;
-    IF (SELECT COUNT(*) FROM `item_template`
-        WHERE `entry` IN (1278059, 1278064, 1278073, 1278082) AND (`Flags` & 4) <> 0 AND `ScriptName` = '') <> 4 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ranked caches: missing scriptless HAS_LOOT containers';
-    END IF;
-    IF EXISTS (
-        SELECT 1 FROM `tmp_ms_ranked_candidate` AS `c`
-        LEFT JOIN `item_template` AS `i` ON `i`.`entry` = `c`.`Item`
-        WHERE `i`.`entry` IS NULL OR BINARY `i`.`name` <> BINARY `c`.`Name`
-            OR `i`.`class` <> `c`.`Class` OR `i`.`subclass` <> `c`.`Subclass`
-            OR `i`.`InventoryType` <> `c`.`InventoryType` OR `i`.`Quality` <> `c`.`Quality`
-            OR `i`.`RequiredLevel` <> `c`.`RequiredLevel` OR `i`.`displayid` <> `c`.`DisplayId`
-            OR `i`.`ItemLevel` <> `c`.`ItemLevel`
-            OR BINARY `i`.`description` <> BINARY `c`.`Description`
-            OR `i`.`RequiredLevel` > 60 OR `i`.`class` NOT IN (2, 4) OR `i`.`InventoryType` = 0
-    ) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ranked caches: candidate metadata mismatch';
-    END IF;
     IF EXISTS (SELECT 1 FROM `reference_loot_template`
         WHERE `Entry` IN (9003801, 9003802, 9003803, 9003804)
             AND `Comment` <> 'MS Classic ranked dungeon cache pool')

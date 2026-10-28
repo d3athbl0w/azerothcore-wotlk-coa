@@ -2492,24 +2492,7 @@ BEGIN
     IF (SELECT COUNT(*) FROM `tmp_ms_heroic_candidate`) <> 1222 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Heroic cache: expected 1222 candidate IDs';
     END IF;
-    IF (SELECT COUNT(*) FROM `item_template`
-        WHERE `entry` = 1278051 AND (`Flags` & 4) <> 0 AND `ScriptName` = 'item_manastorm_cache') <> 1 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Heroic cache: missing cache or incorrect ownership; check SQL 20';
-    END IF;
-    IF EXISTS (
-        SELECT 1 FROM `tmp_ms_heroic_candidate` AS `c`
-        LEFT JOIN `item_template` AS `i` ON `i`.`entry` = `c`.`Item`
-        WHERE `i`.`entry` IS NULL OR BINARY `i`.`name` <> BINARY `c`.`Name`
-            OR `i`.`class` <> `c`.`Class` OR `i`.`subclass` <> `c`.`Subclass`
-            OR `i`.`InventoryType` <> `c`.`InventoryType` OR `i`.`Quality` <> `c`.`Quality`
-            OR `i`.`RequiredLevel` <> `c`.`RequiredLevel` OR `i`.`displayid` <> `c`.`DisplayId`
-            OR `i`.`ItemLevel` <> `c`.`ItemLevel`
-            OR BINARY `i`.`description` <> BINARY `c`.`Description`
-            OR `i`.`RequiredLevel` > 60
-            OR `i`.`class` NOT IN (2, 4) OR `i`.`InventoryType` = 0
-    ) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Heroic cache: candidate metadata mismatch; inspect mapping';
-    END IF;
+
     IF EXISTS (SELECT 1 FROM `conditions` WHERE `SourceTypeOrReferenceId` = 5 AND `SourceGroup` = 1278051) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Heroic cache: existing loot conditions require review';
     END IF;

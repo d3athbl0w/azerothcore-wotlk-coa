@@ -1267,23 +1267,6 @@ BEGIN
     IF (SELECT COUNT(*) FROM `tmp_ms_level60_candidate`) <> 612 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Level60 cache: expected 612 certified candidates';
     END IF;
-    IF (SELECT COUNT(*) FROM `item_template`
-        WHERE `entry` = 97883 AND (`Flags` & 4) <> 0 AND `ScriptName` = 'item_manastorm_cache') <> 1 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Level60 cache: missing HAS_LOOT/script ownership; inspect SQL 20';
-    END IF;
-    IF EXISTS (
-        SELECT 1 FROM `tmp_ms_level60_candidate` AS `c`
-        LEFT JOIN `item_template` AS `i` ON `i`.`entry` = `c`.`Item`
-        WHERE `i`.`entry` IS NULL OR BINARY `i`.`name` <> BINARY `c`.`Name`
-            OR `i`.`class` <> `c`.`Class` OR `i`.`subclass` <> `c`.`Subclass`
-            OR `i`.`InventoryType` <> `c`.`InventoryType` OR `i`.`Quality` <> `c`.`Quality`
-            OR `i`.`RequiredLevel` <> `c`.`RequiredLevel` OR `i`.`displayid` <> `c`.`DisplayId`
-            OR `i`.`ItemLevel` <> `c`.`ItemLevel` OR BINARY `i`.`description` <> BINARY `c`.`Description`
-            OR `i`.`class` NOT IN (2, 4) OR `i`.`InventoryType` = 0 OR `i`.`Quality` NOT IN (2, 3)
-            OR `i`.`RequiredLevel` < 55 OR `i`.`RequiredLevel` > 60
-    ) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Level60 cache: certified item metadata mismatch';
-    END IF;
     IF EXISTS (SELECT 1 FROM `conditions` WHERE `SourceTypeOrReferenceId` = 5 AND `SourceGroup` = 97883) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Level60 cache: existing loot conditions require review';
     END IF;

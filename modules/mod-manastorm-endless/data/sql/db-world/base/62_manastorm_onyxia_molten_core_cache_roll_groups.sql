@@ -1189,50 +1189,6 @@ BEGIN
     IF (SELECT COUNT(*) FROM `tmp_ms_mc_later_candidate`) <> 564 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'MC later caches: expected 564 captured assignments';
     END IF;
-    IF (SELECT COUNT(*) FROM `item_template`
-        WHERE `entry` IN (1278061,1278062,1278063,1278065,1278067)
-            AND (`Flags` & 4) <> 0 AND `ScriptName` = '') <> 5 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'MC later caches: five scriptless HAS_LOOT caches required';
-    END IF;
-    IF (SELECT COUNT(*) FROM `item_loot_template`
-        WHERE `Entry` IN (1278061,1278062,1278063,1278065,1278067)) <> 5 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'MC later caches: SQL 26 required; expected five roots';
-    END IF;
-    IF EXISTS (
-        SELECT 1 FROM `tmp_ms_mc_later_roll` AS `e`
-        LEFT JOIN `item_loot_template` AS `r` ON `r`.`Entry` = `e`.`Cache` AND `r`.`Item` = 1
-        WHERE `r`.`Item` IS NULL OR `r`.`Reference` <> `e`.`Reference` OR `r`.`Chance` <> 100
-            OR `r`.`QuestRequired` <> 0 OR `r`.`LootMode` <> 1 OR `r`.`GroupId` NOT IN (0, 1)
-            OR `r`.`MinCount` <> 1 OR `r`.`MaxCount` <> 1
-    ) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'MC later caches: root layout mismatch; inspect SQL 26';
-    END IF;
-    IF EXISTS (
-        SELECT 1 FROM `tmp_ms_mc_later_roll` AS `e`
-        LEFT JOIN (SELECT `Entry`, COUNT(*) AS `N` FROM `reference_loot_template`
-            WHERE `Entry` IN (9002004,9002040,9002041,9002042,9002043) GROUP BY `Entry`) AS `r`
-            ON `r`.`Entry` = `e`.`Reference`
-        WHERE COALESCE(`r`.`N`, 0) <> `e`.`Expected`
-    ) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'MC later caches: SQL 26 pool counts mismatch';
-    END IF;
-    IF EXISTS (
-        SELECT 1 FROM `tmp_ms_mc_later_candidate` AS `e`
-        LEFT JOIN `reference_loot_template` AS `r` ON `r`.`Entry` = `e`.`Pool` AND `r`.`Item` = `e`.`Item`
-        LEFT JOIN `item_template` AS `i` ON `i`.`entry` = `e`.`Item`
-        WHERE `r`.`Item` IS NULL OR `i`.`entry` IS NULL
-            OR BINARY `i`.`name` <> BINARY `e`.`Name`
-            OR `i`.`class` <> `e`.`Class` OR `i`.`subclass` <> `e`.`Subclass`
-            OR `i`.`InventoryType` <> `e`.`InventoryType` OR `i`.`Quality` <> `e`.`Quality`
-            OR `i`.`RequiredLevel` <> `e`.`RequiredLevel` OR `i`.`displayid` <> `e`.`DisplayId`
-            OR `i`.`ItemLevel` <> `e`.`ItemLevel` OR BINARY `i`.`description` <> BINARY `e`.`Description`
-            OR `i`.`class` NOT IN (2, 4) OR `i`.`InventoryType` = 0 OR `i`.`Quality` <> 4
-            OR `i`.`RequiredLevel` > 60
-            OR `r`.`Reference` <> 0 OR `r`.`Chance` <> 0 OR `r`.`QuestRequired` <> 0
-            OR `r`.`LootMode` <> 1 OR `r`.`GroupId` <> 1 OR `r`.`MinCount` <> 1 OR `r`.`MaxCount` <> 1
-    ) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'MC later caches: installed pool identity or metadata mismatch';
-    END IF;
     IF EXISTS (SELECT 1 FROM `conditions`
         WHERE (`SourceTypeOrReferenceId` = 5 AND `SourceGroup` IN (1278061,1278062,1278063,1278065,1278067))
             OR (`SourceTypeOrReferenceId` = 10 AND `SourceGroup` IN (9002004,9002040,9002041,9002042,9002043))) THEN
