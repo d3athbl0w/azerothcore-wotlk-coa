@@ -5409,7 +5409,7 @@ private:
     if (!info)
       return;
 
-    if (info->Id == AscensionXoroth::SPELL_SACRIFICIAL_CIRCLE)
+    if (info->Id == AscensionXoroth::SPELL_SACRIFICIAL_CIRCLE || AscensionCultist::Named(info, 804152))
     {
       row.Values[SPELL_WIRE_SLOT(SPELL_CASTER_AURA_SPELL_FIELD)] = info->CasterAuraSpell;
       row.Values[SPELL_WIRE_SLOT(SPELL_EXCLUDE_CASTER_AURA_SPELL_FIELD)] = info->ExcludeCasterAuraSpell;
@@ -6515,7 +6515,10 @@ public:
     void OnMailItemObtained(Player* player, uint32 itemId)
     {
         if (auto state = GetState(player))
-            CollectItem(player, *state, itemId, true, false);
+        {
+            Item const* stored = player->GetItemByEntry(itemId);
+            CollectItem(player, *state, itemId, true, stored && stored->IsSoulBound());
+        }
     }
 
   void OnItemObtained(Player *player, Item *item) {
@@ -8508,7 +8511,7 @@ class spell_ascension_personal_bank : public SpellScript
         float x, y, z;
         player->GetClosePoint(x, y, z, player->GetCombatReach(), 2.0f);
 
-        z = GroundHeightBeneath(player->GetMap(), x, y, player->GetPositionZ());
+        z = GroundHeightBeneath(player->GetMap(), x, y, z);
 
         GameObject* vault = player->GetMap()->SummonGameObject(
             entry, x, y, z, player->GetOrientation(), 0.0f, 0.0f, 0.0f,
@@ -8527,6 +8530,11 @@ class spell_ascension_personal_bank : public SpellScript
         personalBankVaults[vault->GetGUID().GetCounter()] = {player->GetGUID(), kind};
 
         player->AddSpellCooldown(GetSpellInfo()->Id, 0, BANK_VAULT_DURATION * IN_MILLISECONDS, true);
+
+        WorldPacket cooldownPacket;
+        player->BuildCooldownPacket(cooldownPacket, SPELL_COOLDOWN_FLAG_NONE, GetSpellInfo()->Id,
+                                     BANK_VAULT_DURATION * IN_MILLISECONDS);
+        player->SendDirectMessage(&cooldownPacket);
 
         LOG_INFO("coa",
                  "Summoned bank object {} (kind {}, entry {}, spell {}) for {} at "
@@ -9955,6 +9963,10 @@ public:
                 case 83086:
                 case 9930889:
                     spellInfo->AttributesEx6 |= SPELL_ATTR6_NOT_IN_RAID_INSTANCES;
+                    break;
+                case 804702:
+                case 804704:
+                    spellInfo->AttributesEx6 &= ~SPELL_ATTR6_DO_NOT_CHAIN_TO_CROWD_CONTROLLED_TARGETS;
                     break;
                 default:
                     break;
