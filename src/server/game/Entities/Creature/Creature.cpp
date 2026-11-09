@@ -42,6 +42,7 @@
 #include "PoolMgr.h"
 #include "ScriptMgr.h"
 #include "ScriptedGossip.h"
+#include "SmartAI.h"
 #include "SpellAuraDefines.h"
 #include "SpellAuraEffects.h"
 #include "SpellMgr.h"
@@ -2126,6 +2127,8 @@ bool Creature::CanStartAttack(Unit const* who, bool force) const
  */
 void Creature::setDeathState(DeathState state, bool despawn)
 {
+    bool const wasParabolic = state == DeathState::JustDied && movespline->Initialized() && !movespline->Finalized() &&
+        movespline->isParabolic();
     Unit::setDeathState(state, despawn);
 
     if (state == DeathState::JustDied)
@@ -2157,7 +2160,7 @@ void Creature::setDeathState(DeathState state, bool despawn)
         if (m_formation && m_formation->GetLeader() == this)
             m_formation->FormationReset(true, false);
 
-        bool needsFalling = !despawn && (IsFlying() || IsHovering()) && !IsUnderWater();
+        bool needsFalling = !despawn && (IsFlying() || IsHovering() || wasParabolic) && !IsUnderWater();
         SetHover(false);
         SetDisableGravity(false);
 
@@ -3373,6 +3376,19 @@ void Creature::PauseMovementForInteraction()
 {
     if (uint32 pause = GetMovementTemplate().GetInteractionPauseTimer())
     {
+        if (SmartAI* smartAI = dynamic_cast<SmartAI*>(AI()); smartAI && smartAI->IsEscorted())
+        {
+            // Only ambient paths: CMSG_QUESTGIVER_HELLO needs no npcflag, so any player could otherwise
+            // hold another player's escort.
+            ObjectVector const* escorters = smartAI->GetScript()->GetStoredTargetVector(SMART_ESCORT_TARGETS, *this);
+            if (!escorters || escorters->empty())
+            {
+                if (!smartAI->HasEscortState(SMART_ESCORT_PAUSED | SMART_ESCORT_RETURNING) && !IsInCombat())
+                    smartAI->PausePath(pause, true);
+                return;
+            }
+        }
+
         uint8 pauseSlot = MOTION_SLOT_IDLE;
 
         if (GetMotionMaster()->GetMotionSlotType(MOTION_SLOT_ACTIVE) == POINT_MOTION_TYPE)
@@ -3426,6 +3442,13 @@ uint8 Creature::GetLootSkillLevelFor(Player const* looter) const
 
 uint8 Creature::getLevelForTarget(WorldObject const* target) const
 {
+    if (target)
+        if (Unit const* opponent = target->ToUnit())
+            if (Player const* viewer = opponent->GetCharmerOrOwnerPlayerOrPlayerItself())
+                if (LocalLevelScaling::PersonalInstanceScalingFor(FindMap(), viewer))
+                    if (uint8 const view = LocalLevelScaling::ViewLevelFor(viewer, this))
+                        return view;
+
     if (!isWorldBoss() || !target || !target->ToUnit())
     {
         // A character with open-world scaling on fights *their* version of this creature, and the
